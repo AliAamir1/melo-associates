@@ -43,11 +43,14 @@ export async function POST(req: Request) {
       schema: questionsSchema,
       system: SYSTEM_PROMPT,
       prompt: buildUserPrompt(jobTitle),
+      onError: ({ error }) => {
+        console.error('streamObject error:', error);
+      },
     });
 
     return result.toTextStreamResponse();
   } catch (err) {
-    console.error('streamObject failed:', err);
+    console.error('streamObject threw synchronously:', err);
     return Response.json(
       { error: 'The AI provider failed. Please try again.' },
       { status: 502 },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,19 +15,21 @@ export function JobTitleForm({ isLoading, onSubmit }: Props) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const parsed = jobTitleSchema.safeParse({ jobTitle: value });
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Invalid input.');
-      return;
-    }
-    setError(null);
-    onSubmit(parsed.data.jobTitle);
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const parsed = jobTitleSchema.safeParse({ jobTitle: value });
+        if (!parsed.success) {
+          setError(parsed.error.issues[0]?.message ?? 'Invalid input.');
+          return;
+        }
+        setError(null);
+        onSubmit(parsed.data.jobTitle);
+      }}
+      className="flex flex-col gap-3"
+      noValidate
+    >
       <Label htmlFor="job-title" className="text-sm font-medium">
         Job title
       </Label>

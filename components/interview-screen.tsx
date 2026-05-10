@@ -8,8 +8,12 @@ import { QuestionList } from '@/components/question-list';
 import { ErrorState } from '@/components/error-state';
 import { questionsSchema } from '@/lib/schemas';
 
+const PROVIDER_ERROR_MESSAGE =
+  'The AI provider returned no questions. This is usually an API key or quota issue — check the server logs.';
+
 export function InterviewScreen() {
   const [lastJobTitle, setLastJobTitle] = useState<string | null>(null);
+  const [providerError, setProviderError] = useState<string | null>(null);
 
   const { object, submit, isLoading, error, stop } = useObject({
     api: '/api/questions',
@@ -17,28 +21,35 @@ export function InterviewScreen() {
     onError: (err) => {
       toast.error(err.message ?? 'Something went wrong.');
     },
+    onFinish: ({ object: finalObject }) => {
+      if (!finalObject || finalObject.questions.length === 0) {
+        setProviderError(PROVIDER_ERROR_MESSAGE);
+        toast.error(PROVIDER_ERROR_MESSAGE);
+      }
+    },
   });
 
   function handleSubmit(jobTitle: string) {
     setLastJobTitle(jobTitle);
+    setProviderError(null);
     submit({ jobTitle });
   }
 
   function handleRetry() {
     if (lastJobTitle) {
+      setProviderError(null);
       submit({ jobTitle: lastJobTitle });
     }
   }
+
+  const visibleError = error?.message ?? providerError;
 
   return (
     <div className="flex flex-col gap-8">
       <JobTitleForm isLoading={isLoading} onSubmit={handleSubmit} />
 
-      {error ? (
-        <ErrorState
-          message={error.message ?? 'The request failed. Please try again.'}
-          onRetry={handleRetry}
-        />
+      {visibleError ? (
+        <ErrorState message={visibleError} onRetry={handleRetry} />
       ) : (
         <QuestionList data={object} isLoading={isLoading} />
       )}
