@@ -1,6 +1,6 @@
 # Melo Associates Technical Screen — Interview Question Generator
 
-A single-page Next.js app that takes a job title and streams three role-specific interview questions (with a short rationale for each) using the Vercel AI SDK and Gemini 2.0 Flash.
+A single-page Next.js app that takes a job title and streams three role-specific interview questions (with a short rationale for each) using the Vercel AI SDK and Gemini 2.5 Flash.
 
 **Live URL:** _[paste the Vercel URL after deploy]_
 **Loom walkthrough:** _[paste the Loom URL after recording]_
@@ -20,7 +20,7 @@ Open http://localhost:3000.
 
 ```
 [browser]                 [server]                       [provider]
-JobTitleForm ─submit──►  POST /api/questions  ─stream──►  Gemini 2.0 Flash
+JobTitleForm ─submit──►  POST /api/questions  ─stream──►  Gemini 2.5 Flash
                           │
                           ├─ zod input validation
                           ├─ in-memory rate limit (5 req/min/IP)
@@ -65,7 +65,7 @@ lib/
 ## Provider + model
 
 - **Provider:** Google Generative AI via `@ai-sdk/google`.
-- **Model:** `gemini-2.0-flash`.
+- **Model:** `gemini-2.5-flash`.
 - **Why:** Free tier eligibility per the task brief, fast time-to-first-token, well-supported structured output. Swap is a one-line change in `lib/ai.ts` (`MODEL_ID`).
 
 ## What I would improve with more time

@@ -19,7 +19,7 @@ export default function HomePage() {
       <InterviewScreen />
 
       <footer className="mt-auto border-t pt-6 text-xs text-muted-foreground">
-        Powered by Gemini 2.0 Flash via Vercel AI SDK.
+        Powered by Gemini 2.5 Flash via Vercel AI SDK.
       </footer>
     </main>
   );

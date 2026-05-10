@@ -11,4 +11,4 @@ if (!apiKey) {
 
 export const google = createGoogleGenerativeAI({ apiKey });
 
-export const MODEL_ID = 'gemini-2.0-flash';
+export const MODEL_ID = 'gemini-2.5-flash';
