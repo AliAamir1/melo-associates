@@ -56,8 +56,7 @@ export function JobTitleForm({ isLoading, onSubmit }: Props) {
           {error}
         </p>
       ) : (
-        <p id="job-title-hint" className="text-xs text-muted-foreground">
-          Use a generic job title only — no names, emails, or other PII.
+        <p id="job-title-hint" className="text-xs text-muted-foreground">        
         </p>
       )}
     </form>
