@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Melo Associates Technical Screen — Interview Question Generator
 
-## Getting Started
+A single-page Next.js app that takes a job title and streams three role-specific interview questions (with a short rationale for each) using the Vercel AI SDK and Gemini 2.0 Flash.
 
-First, run the development server:
+**Live URL:** _[paste the Vercel URL after deploy]_
+**Loom walkthrough:** _[paste the Loom URL after recording]_
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env.local
+# add your GOOGLE_GENERATIVE_AI_API_KEY (free at https://aistudio.google.com/apikey)
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+[browser]                 [server]                       [provider]
+JobTitleForm ─submit──►  POST /api/questions  ─stream──►  Gemini 2.0 Flash
+                          │
+                          ├─ zod input validation
+                          ├─ in-memory rate limit (5 req/min/IP)
+                          └─ streamObject(schema)  ──text-stream─►
+                                                                  │
+useObject ◄────────────────── partial JSON chunks ────────────────┘
+   │
+QuestionList → QuestionCard × 3   (cards fade in as fields arrive)
+```
 
-## Learn More
+## Folder map
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+  api/questions/route.ts   # POST handler — streamObject, server-only
+  page.tsx                 # server component, renders <InterviewScreen/>
+  layout.tsx               # fonts, metadata, <Toaster/>
+components/
+  ui/                      # shadcn primitives (untouched)
+  interview-screen.tsx     # client root, owns the useObject hook
+  job-title-form.tsx       # form + client-side zod validation
+  question-list.tsx        # streaming-aware list
+  question-card.tsx        # card with partial-field guards
+  loading-skeleton.tsx     # 3 placeholder cards
+  error-state.tsx          # error w/ retry button
+lib/
+  ai.ts                    # google provider, model id (server-only)
+  prompt.ts                # system + user prompt builders
+  rate-limit.ts            # in-memory token bucket
+  schemas.ts               # zod input + output schemas
+  utils.ts                 # cn() helper (shadcn default)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Security notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `GOOGLE_GENERATIVE_AI_API_KEY` is read only inside `lib/ai.ts`, which is guarded by `import 'server-only'`. Importing it from a client module fails the build.
+- Input is validated with Zod on both the client (UX) and server (trust boundary). The server is authoritative.
+- The output schema is enforced by `streamObject` during decode; the model cannot exfiltrate prose.
+- A simple per-IP token bucket (`5 req / min`) protects the free tier. **Production should swap this for Upstash Redis** — the in-memory map does not survive process restarts and does not work across Vercel's serverless instances.
+- The system prompt instructs the model to ignore instructions embedded inside the job title.
 
-## Deploy on Vercel
+## Provider + model
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Provider:** Google Generative AI via `@ai-sdk/google`.
+- **Model:** `gemini-2.0-flash`.
+- **Why:** Free tier eligibility per the task brief, fast time-to-first-token, well-supported structured output. Swap is a one-line change in `lib/ai.ts` (`MODEL_ID`).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## What I would improve with more time
+
+- Production-grade rate limiting via Upstash Redis.
+- Lightweight eval harness — a fixture of job titles plus heuristics to flag generic outputs ("Tell me about yourself") so prompt edits can regress safely.
+- Per-question regenerate ("give me a different one of these") and a copy-to-clipboard affordance.
+- Accessibility audit — keyboard focus order, screen-reader announcements when each card streams in.
+- Tighter mobile polish (the page works on small screens but the form layout could earn another pass).
+
+## Testing
+
+This is a 30-minute screen, so there is no unit/e2e harness. Verification = manual browser flows + `pnpm tsc --noEmit` + `pnpm lint` + `pnpm build`. With more time the first thing to add would be the eval harness above.
+
+## AI usage disclosure
+
+Per the brief: I used Claude Code as a pair-programming assistant for project structure, prompt iteration, and small refactors. The code in this repo was reviewed and edited by hand — none of it was committed unread.
+
+## License
+
+MIT.
